@@ -1,4 +1,4 @@
-# Scribe
+# SCRÏBE
 
 A textbox library for LÖVE.
 
