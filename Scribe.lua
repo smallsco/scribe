@@ -1,4 +1,5 @@
 --- SCRÏBE: A message box library for Love2D 
+-- @version 0.2
 -- @license MIT https://github.com/smallsco/scribe/blob/master/LICENSE
 local Scribe = {}
 Scribe.__index = Scribe
@@ -9,6 +10,22 @@ setmetatable( Scribe, {
 })
 local require_path = (...):match( "(.-)[^%.]+$" )
 local popo = require( require_path .. '.popo.Text' )
+
+
+--- The default click callback function. Creates a "link" operation that opens the "param"
+--- as a URL (i.e. using your web browser) if the left mouse button is pressed.
+-- @param number x The absolute x coordinate of the click
+-- @param number y The absolute y coordinate of the click
+-- @param string button The left "l" or right "r" mouse button pressed
+-- @param string op The operation to perform
+-- @param string param The parameter to use with the operation
+local function defaultClickCallback( x, y, button, op, param )
+
+    if op == 'link' and button == 'l' then
+        love.system.openURL( param )
+    end
+
+end
 
 
 --- Gets the x/y scale factors required to resize a source image to a target size.
@@ -62,6 +79,7 @@ function Scribe.new( opt )
     self.h = opt.h or ( self.font:getHeight() * 4 ) + ( self.ypad * 2 )
     self.bg = opt.bg or renderDefaultContainer
     self.scale_bg = ( opt.scale_bg == nil ) and true or opt.scale_bg
+    self.click_callback = ( opt.click_calback == nil ) and opt.click_callback or defaultClickCallback
     self.color = opt.color or { 255, 255, 255 }
     self.name = opt.name
     self.name_color = opt.name_color or { 255, 255, 0 }
@@ -116,6 +134,12 @@ function Scribe:regenerate( append )
         end,
         color = function( dt, c, r, g, b )
             love.graphics.setColor( r, g, b )
+        end,
+        onclick = function( dt, c, op, param )
+            if not c.click_op then
+                c.click_op = op
+                c.click_param = param
+            end
         end,
         customDraw = function( x, y, c )
             love.graphics.print(
@@ -185,10 +209,41 @@ function Scribe:regenerate( append )
 end
 
 
+
+function Scribe:mousepressed( x, y, button )
+    for _, v in ipairs( self.popo.characters ) do
+        if v.click_op ~= nil then
+        
+            -- translate the localized x, y into absolute coordinates
+            local tx = v.x + self.x + self.xpad
+            local ty = v.y + self.y + 10
+        
+            if x >= tx and x < self.popo.font:getWidth( v.character ) + tx then
+                if y >= ty and y < self.popo.font:getHeight() + ty then
+                    self.click_callback( x, y, button, v.click_op, v.click_param )
+                end
+            end
+            
+        end
+    end
+end
+
+
 --- Updates the background of the message box.
 -- @param mixed bg The new background of the message box. Can be an image or a function.
 function Scribe:setBackground( bg )
     self.bg = bg or renderDefaultContainer
+end
+
+
+--- Updates the click callback function.
+-- @param function f The new click callback function
+function Scribe:setClickCallback( f )
+    if type( f ) == 'function' then
+        self.click_callback = f
+    else
+        error( 'Click callback must be a function' )
+    end
 end
 
 

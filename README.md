@@ -20,6 +20,7 @@ A Scribe object is returned, which acts as a Factory. Using this object, you can
   * [Fonts and Colors](#fonts-and-colors)
   * [Text-Modifying Functions](#text-modifying-functions)
   * [Images](#images)
+  * [Clicks](#clicks)
   * [Setting the Background](#setting-the-background)
   * [Setting a Name](#setting-a-name)
   * [Adding or Replacing Text](#adding-or-replacing-text)
@@ -46,6 +47,11 @@ end
 
 function love.draw()
     textbox:draw()
+end
+
+-- Optional, only necessary if you want to use click functions.
+function love.mousepressed( x, y, b )
+	textbox:mousepressed( x, y, b )
 end
 ```
 
@@ -145,6 +151,45 @@ textbox = Scribe({
 ![ex6](http://i.imgur.com/3DpTjZE.gif)
 
 Note that images are not automatically resized in any way. It is up to you to ensure that enough space is reserved for the image, and that it is no bigger than the height of a single row of text.
+
+### Clicks
+
+SCRÏBE allows you to run a callback function when clicking on a particular piece of text. The default callback function allows you to create hyperlinks, and works like this:
+
+```lua
+textbox = Scribe({
+    text = '[Hello, World!](onclick: "link", "http://www.google.ca")',
+    font = love.graphics.newFont( 'animeace2_reg.ttf', 24 )
+})
+```
+
+Clicking on the "Hello, World!" text will launch Google in your system default web browser.
+
+You can override the default callback function when creating the textbox object, by setting the `click_callback` parameter. The function you provide takes five values as input:
+
+* `x` - The absolute x coordinate of where the click occurred
+* `y` - The absolute y coordinate of where the click occurred
+* `button` - The mouse button pressed - `l` for left or `r` for right
+* `op` - The operation to perform, so that your callback function may perform many different operations.
+* `param` - The parameter required to execute the operation.
+
+For example, here's how you could implement both hyperlinks and a simple logger:
+
+```lua
+function hyperlinksAndLogger( x, y, button, op, param )
+    if op == 'link' and button == 'l' then
+        love.system.openURL( param )
+    elseif op == 'log' and button == 'l' then
+        print( param )
+    end
+end
+textbox = Scribe({
+    text = '[Hello](onclick: "log", "Hello, Log!"), [World!](onclick: "link", "http://www.google.ca")',
+    font = love.graphics.newFont( 'animeace2_reg.ttf', 24 ),
+    click_callback = hyperlinksAndLogger
+})
+```
+
 
 ### Setting the Background
 
